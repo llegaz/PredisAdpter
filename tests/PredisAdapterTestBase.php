@@ -25,6 +25,7 @@ class PredisAdapterTestBase extends \PHPUnit\Framework\TestCase
         'port' => 6379,
         'scheme' => 'tcp',
         'database' => 0,
+        'persistent' => false,
     ];
 
     public static function setUpBeforeClass(): void

@@ -26,8 +26,10 @@ class PredisClientsPool
     public function __destruct()
     {
         foreach (self::$clients as $client) {
-            if ($client instanceof Client) {
-                $client->disconnect();
+            if ($client instanceof Client && $con = $client->getConnection()) {
+                if (!$con->getParameters()->toArray()['persistent']) {
+                    $client->disconnect();
+                }
                 unset($client);
             }
         }
@@ -38,6 +40,7 @@ class PredisClientsPool
      *
      * @param array $conf
      * @return Client
+     * @throws ConnectionLostException
      */
     public static function getClient(array $conf): Client
     {
@@ -50,11 +53,21 @@ class PredisClientsPool
         } else {
             try {
                 self::$clients[$md5] = [];
+                if (isset($conf['persistent']) && $conf['persistent']) {
+                    $conf['persistent'] = count(self::$clients) + 1;
+                    $conf['persistent'] = (string) $conf['persistent'];
+                }
                 $predis = new Client($conf);
-                $predis->connect();
+                // delayed connection
+                //$predis->connect();
                 self::$clients[$md5] = $predis;
-            } catch (/* \Predis\PredisException $pe */ \Exception $e) {
-                throw new ConnectionLostException('Connection to redis server is lost or not responding' . PHP_EOL, 500, $e);
+            } catch (\Exception $e) {
+                $debug = '';
+                if (defined('LLEGAZ_DEBUG')) {
+                    $debug = PHP_EOL . $e->getTraceAsString();
+                }
+
+                throw new ConnectionLostException('Connection to redis server is lost or not responding' . $debug . PHP_EOL, 500, $e);
             }
         }
 

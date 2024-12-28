@@ -78,6 +78,15 @@ class PredisAdapterTest extends \LLegaz\Predis\Tests\PredisAdapterTestBase
     }
 
     /**
+     * @expectedException \LogicException
+     */
+    public function testSelectDBLogicException()
+    {
+        $this->expectException(\LogicException::class);
+        $this->predisAdapter->selectDatabase(-42);
+    }
+
+    /**
      * @expectedException LLegaz\Predis\Exception\ConnectionLostException
      */
     public function testClientListException()
